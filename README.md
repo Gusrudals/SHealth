@@ -52,3 +52,6 @@ id,age,weight,height
 # 주의 사항
 - 코드 품질을 높이기 위해 C++의 경우 STL, Java/python의 경우 외부 모듈을 필요한 경우 사용하셔도 됩니다.
 
+---
+
+Author: 현경민, Reviewer: 김경림, 문정환, 박길구, 김재원, 김대경, 최혁성
