@@ -6,7 +6,13 @@ alwaysApply: false
 
 # Java 리팩토링 규칙
 
-현재 코드는 의도적인 코드 스멜이 포함된 실습용 베이스다. 개선 시 아래를 따른다.
+현재 코드는 의도적인 코드 스멜이 포함된 실습용 베이스다. 개선 시 아래를 따른다. 루트 [`.cursorrules`](../../.cursorrules)의 코딩 규칙과 충돌 시 `.cursorrules`를 따른다.
+
+## `.cursorrules` 정렬 (메인 코드)
+
+- 매직 넘버 → named constant로 추출 (BMI 경계 18.5, 23, 25 포함)
+- 모든 `public` 메서드에 Javadoc
+- 한 메서드(함수) 본문 **최대 20줄** — 초과 시 책임 분리·추출
 
 ## 제거·개선 대상
 
@@ -34,5 +40,5 @@ public int calculateBmi(String filename) { /* load + impute + bmi + stats */ }
 
 - CSV 파싱은 `BufferedReader` 유지 가능; 반복 시 `List<UserRecord>` 등 컬렉션 우선
 - 연령대 루프 `for (int decade = 20; decade <= 70; decade += 10)` 패턴 재사용
-- 경계값(18.5, 23, 25)은 named constant로 한곳에 정의
-- `main`은 얇게 유지하고 도메인 로직은 테스트 가능한 단위로 분리
+- 경계값(18.5, 23, 25)은 named constant로 한곳에 정의 (`.cursorrules` 매직 넘버 규칙)
+- `main`은 얇게 유지(20줄 이내)하고 도메인 로직은 테스트 가능한 단위로 분리
