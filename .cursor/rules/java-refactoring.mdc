@@ -1,0 +1,38 @@
+---
+description: SHealth Java 메인 코드 리팩토링·클린코드 규칙
+globs: src/main/java/**/*.java
+alwaysApply: false
+---
+
+# Java 리팩토링 규칙
+
+현재 코드는 의도적인 코드 스멜이 포함된 실습용 베이스다. 개선 시 아래를 따른다.
+
+## 제거·개선 대상
+
+- 고정 크기 배열(`new X[10000]`), 매직 넘버(`100`/`200`/`300`/`400`), 연령대별 중복 필드·if-else 사다리
+- 한 메서드에 파일 I/O + 보정 + BMI 계산 + 통계가 섞인 구조 → 책임별 클래스/메서드 분리
+- `e.printStackTrace()` → 호출부로 예외 전달 또는 명시적 처리
+
+## 네이밍·타입
+
+- `ageClass` → 연령대 시작값(20, 30, …)을 드러내는 이름 (`ageDecade`, `ageGroupStart` 등)
+- BMI 범주는 `enum` 또는 상수 클래스 (`UNDERWEIGHT`, `NORMAL`, …)
+- 비율·BMI·체중·키는 `double` 유지, ID는 `int`/`String` 중 일관되게 선택
+
+## 구조 예시 (방향성)
+
+```java
+// ❌ 거대 메서드 + 전역적 인스턴스 상태
+public int calculateBmi(String filename) { /* load + impute + bmi + stats */ }
+
+// ✅ 단계별 협력
+// CsvUserLoader → WeightImputer / HeightImputer → BmiCalculator → AgeGroupStatistics
+```
+
+## 구현 시
+
+- CSV 파싱은 `BufferedReader` 유지 가능; 반복 시 `List<UserRecord>` 등 컬렉션 우선
+- 연령대 루프 `for (int decade = 20; decade <= 70; decade += 10)` 패턴 재사용
+- 경계값(18.5, 23, 25)은 named constant로 한곳에 정의
+- `main`은 얇게 유지하고 도메인 로직은 테스트 가능한 단위로 분리
