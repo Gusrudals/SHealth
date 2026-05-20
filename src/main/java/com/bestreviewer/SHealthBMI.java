@@ -2,18 +2,30 @@ package com.bestreviewer;
 
 import java.io.IOException;
 
+/**
+ * Entry point: loads {@code shealth.dat} and prints age-decade BMI distribution ratios.
+ */
 public class SHealthBMI {
 
-    public static void main(String[] args) throws IOException {
-        SHealth shealth = new SHealth();
-        shealth.calculateBmi("shealth.dat");
+    private static final String DEFAULT_DATA_FILE = "shealth.dat";
 
-        System.out.printf("20 - underweight = %f, normal = %f, overweight = %f, obesity = %f\n", shealth.getBmiRatio(20, 100), shealth.getBmiRatio(20, 200), shealth.getBmiRatio(20, 300), shealth.getBmiRatio(20, 400));
-        System.out.printf("30 - underweight = %f, normal = %f, overweight = %f, obesity = %f\n", shealth.getBmiRatio(30, 100), shealth.getBmiRatio(30, 200), shealth.getBmiRatio(30, 300), shealth.getBmiRatio(30, 400));
-        System.out.printf("40 - underweight = %f, normal = %f, overweight = %f, obesity = %f\n", shealth.getBmiRatio(40, 100), shealth.getBmiRatio(40, 200), shealth.getBmiRatio(40, 300), shealth.getBmiRatio(40, 400));
-        System.out.printf("50 - underweight = %f, normal = %f, overweight = %f, obesity = %f\n", shealth.getBmiRatio(50, 100), shealth.getBmiRatio(50, 200), shealth.getBmiRatio(50, 300), shealth.getBmiRatio(50, 400));
-        System.out.printf("60 - underweight = %f, normal = %f, overweight = %f, obesity = %f\n", shealth.getBmiRatio(60, 100), shealth.getBmiRatio(60, 200), shealth.getBmiRatio(60, 300), shealth.getBmiRatio(60, 400));
-        System.out.printf("70 - underweight = %f, normal = %f, overweight = %f, obesity = %f\n", shealth.getBmiRatio(70, 100), shealth.getBmiRatio(70, 200), shealth.getBmiRatio(70, 300), shealth.getBmiRatio(70, 400));
+    public static void main(String[] args) throws IOException {
+        String dataFile = args.length > 0 ? args[0] : DEFAULT_DATA_FILE;
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(dataFile);
+
+        for (int ageDecade : SHealth.AGE_DECADES) {
+            printDecadeRatios(shealth, ageDecade);
+        }
     }
 
+    private static void printDecadeRatios(SHealth shealth, int ageDecade) {
+        System.out.printf(
+                "%d - underweight = %f, normal = %f, overweight = %f, obesity = %f%n",
+                ageDecade,
+                shealth.getRatio(ageDecade, BmiCategory.UNDERWEIGHT),
+                shealth.getRatio(ageDecade, BmiCategory.NORMAL),
+                shealth.getRatio(ageDecade, BmiCategory.OVERWEIGHT),
+                shealth.getRatio(ageDecade, BmiCategory.OBESITY));
+    }
 }
