@@ -15,6 +15,8 @@ import java.util.Map;
 public class SHealth {
 
     private static final double MISSING_WEIGHT = 0.0;
+    private static final double NO_DECADE_AVERAGE = -1.0;
+    private static final int CSV_COLUMN_COUNT = 4;
     private static final double PERCENT_SCALE = 100.0;
     private static final int DECADE_WIDTH = 10;
     private static final int MIN_AGE_DECADE = 20;
@@ -82,6 +84,9 @@ public class SHealth {
                 if (tokens.isEmpty()) {
                     break;
                 }
+                if (tokens.size() < CSV_COLUMN_COUNT) {
+                    throw new IOException("Invalid CSV: expected at least " + CSV_COLUMN_COUNT + " columns");
+                }
                 ages[count] = Integer.parseInt(tokens.get(1));
                 weights[count] = Double.parseDouble(tokens.get(2));
                 heights[count] = Double.parseDouble(tokens.get(3));
@@ -98,6 +103,9 @@ public class SHealth {
 
     private void imputeDecade(int ageDecade) {
         double average = averageValidWeightInDecade(ageDecade);
+        if (average == NO_DECADE_AVERAGE) {
+            return;
+        }
         for (int i = 0; i < count; i++) {
             if (isInAgeDecade(ages[i], ageDecade) && weights[i] == MISSING_WEIGHT) {
                 weights[i] = average;
@@ -113,6 +121,9 @@ public class SHealth {
                 sum += weights[i];
                 validCount++;
             }
+        }
+        if (validCount == 0) {
+            return NO_DECADE_AVERAGE;
         }
         return sum / validCount;
     }
