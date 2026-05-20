@@ -1,51 +1,37 @@
 package com.bestreviewer;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Loads Samsung Health CSV data, imputes missing weights, computes BMI, and age-decade statistics.
+ * Facade: loads CSV, imputes missing values, computes BMI, and exposes statistics and queries.
  */
 public class SHealth {
 
-    private static final double MISSING_WEIGHT = 0.0;
-    private static final double NO_DECADE_AVERAGE = -1.0;
-    private static final int CSV_COLUMN_COUNT = 4;
-    private static final double PERCENT_SCALE = 100.0;
-    private static final int DECADE_WIDTH = 10;
-    private static final int MIN_AGE_DECADE = 20;
-    private static final int MAX_AGE_DECADE = 70;
-    private static final int DECADE_STEP = 10;
-    private static final int MAX_RECORDS = 10000;
-    static final int[] AGE_DECADES = {20, 30, 40, 50, 60, 70};
+    static final int[] AGE_DECADES = AgeDecade.VALUES;
 
-    private int count;
-    private final int[] ages = new int[MAX_RECORDS];
-    private final double[] heights = new double[MAX_RECORDS];
-    private final double[] weights = new double[MAX_RECORDS];
-    private final double[] bmis = new double[MAX_RECORDS];
-    private final Map<Integer, EnumMap<BmiCategory, Double>> ratiosByDecade = new HashMap<>();
+    private final CsvHealthRecordLoader loader = new CsvHealthRecordLoader();
+    private final WeightImputer weightImputer = new WeightImputer();
+    private final HeightImputer heightImputer = new HeightImputer();
+    private final AgeDecadeStatistics statistics = new AgeDecadeStatistics();
+    private final UserQueryService userQueryService = new UserQueryService();
+
+    private List<UserRecord> records = List.of();
 
     /**
-     * Loads data, imputes weights, computes BMI and age-decade ratio statistics.
+     * Loads data, imputes weights and heights, computes BMI and age-decade ratio statistics.
      *
      * @param filename path to CSV file
      * @return number of records loaded
      * @throws IOException if the file cannot be read
      */
     public int calculateBmi(String filename) throws IOException {
-        count = 0;
-        loadRecordsFromCsv(filename);
-        imputeZeroWeightsByAgeDecade();
-        computeAllBmis();
-        aggregateRatiosByAgeDecade();
-        return count;
+        records = loader.load(filename);
+        weightImputer.impute(records);
+        heightImputer.impute(records);
+        computeAllBmis(records);
+        statistics.aggregate(records);
+        return records.size();
     }
 
     /**
@@ -67,124 +53,28 @@ public class SHealth {
      * @return percentage for that decade and category, or 0.0 if not computed
      */
     public double getRatio(int ageDecade, BmiCategory category) {
-        EnumMap<BmiCategory, Double> ratios = ratiosByDecade.get(ageDecade);
-        if (ratios == null) {
-            return 0.0;
-        }
-        Double ratio = ratios.get(category);
-        return ratio != null ? ratio : 0.0;
+        return statistics.getRatio(ageDecade, category);
     }
 
-    private void loadRecordsFromCsv(String filename) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
-            reader.readLine();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                List<String> tokens = parseCsvLine(line, ',');
-                if (tokens.isEmpty()) {
-                    break;
-                }
-                if (tokens.size() < CSV_COLUMN_COUNT) {
-                    throw new IOException("Invalid CSV: expected at least " + CSV_COLUMN_COUNT + " columns");
-                }
-                ages[count] = Integer.parseInt(tokens.get(1));
-                weights[count] = Double.parseDouble(tokens.get(2));
-                heights[count] = Double.parseDouble(tokens.get(3));
-                count++;
-            }
-        }
+    /**
+     * @return ids of users with normal BMI (18.5 &lt; BMI &lt; 23); empty if not yet loaded
+     */
+    public List<Integer> getNormalBmiUserIds() {
+        return userQueryService.findNormalBmiUserIds(records);
     }
 
-    private void imputeZeroWeightsByAgeDecade() {
-        for (int ageDecade = MIN_AGE_DECADE; ageDecade <= MAX_AGE_DECADE; ageDecade += DECADE_STEP) {
-            imputeDecade(ageDecade);
-        }
+    /**
+     * @param category BMI category
+     * @return percentage of all loaded users in that category, or 0.0 if not loaded
+     */
+    public double getOverallRatio(BmiCategory category) {
+        return userQueryService.getOverallRatio(records, category);
     }
 
-    private void imputeDecade(int ageDecade) {
-        double average = averageValidWeightInDecade(ageDecade);
-        if (average == NO_DECADE_AVERAGE) {
-            return;
+    private void computeAllBmis(List<UserRecord> records) {
+        for (UserRecord record : records) {
+            double bmi = BmiClassifier.computeBmi(record.getWeight(), record.getHeight());
+            record.setBmi(bmi);
         }
-        for (int i = 0; i < count; i++) {
-            if (isInAgeDecade(ages[i], ageDecade) && weights[i] == MISSING_WEIGHT) {
-                weights[i] = average;
-            }
-        }
-    }
-
-    private double averageValidWeightInDecade(int ageDecade) {
-        double sum = 0.0;
-        int validCount = 0;
-        for (int i = 0; i < count; i++) {
-            if (isInAgeDecade(ages[i], ageDecade) && weights[i] != MISSING_WEIGHT) {
-                sum += weights[i];
-                validCount++;
-            }
-        }
-        if (validCount == 0) {
-            return NO_DECADE_AVERAGE;
-        }
-        return sum / validCount;
-    }
-
-    private void computeAllBmis() {
-        for (int i = 0; i < count; i++) {
-            bmis[i] = BmiClassifier.computeBmi(weights[i], heights[i]);
-        }
-    }
-
-    private void aggregateRatiosByAgeDecade() {
-        ratiosByDecade.clear();
-        for (int ageDecade = MIN_AGE_DECADE; ageDecade <= MAX_AGE_DECADE; ageDecade += DECADE_STEP) {
-            storeDecadeRatios(ageDecade, computeDecadeRatios(ageDecade));
-        }
-    }
-
-    private EnumMap<BmiCategory, Double> computeDecadeRatios(int ageDecade) {
-        int[] counts = new int[BmiCategory.values().length];
-        int total = 0;
-        for (int i = 0; i < count; i++) {
-            if (!isInAgeDecade(ages[i], ageDecade)) {
-                continue;
-            }
-            total++;
-            BmiCategory category = BmiClassifier.classify(bmis[i]);
-            counts[category.ordinal()]++;
-        }
-        return toPercentRatios(counts, total);
-    }
-
-    private EnumMap<BmiCategory, Double> toPercentRatios(int[] counts, int total) {
-        EnumMap<BmiCategory, Double> ratios = new EnumMap<>(BmiCategory.class);
-        if (total == 0) {
-            return ratios;
-        }
-        for (BmiCategory category : BmiCategory.values()) {
-            double percent = (double) counts[category.ordinal()] * PERCENT_SCALE / total;
-            ratios.put(category, percent);
-        }
-        return ratios;
-    }
-
-    private void storeDecadeRatios(int ageDecade, EnumMap<BmiCategory, Double> ratios) {
-        ratiosByDecade.put(ageDecade, ratios);
-    }
-
-    private static boolean isInAgeDecade(int age, int ageDecade) {
-        return age >= ageDecade && age < ageDecade + DECADE_WIDTH;
-    }
-
-    private List<String> parseCsvLine(String line, char delimiter) {
-        List<String> tokens = new ArrayList<>();
-        int start = 0;
-        int end = line.indexOf(delimiter);
-        while (end != -1) {
-            tokens.add(line.substring(start, end));
-            start = end + 1;
-            end = line.indexOf(delimiter, start);
-        }
-        tokens.add(line.substring(start));
-        return tokens;
     }
 }

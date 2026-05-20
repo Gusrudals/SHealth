@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SHealth BMI — Activity 5 회고 및 발표</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --text: #e8edf4;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent2: #34d399;
+      --warn: #fbbf24;
+      --danger: #f87171;
+      --border: #334155;
+      --font: "Pretendard", "Segoe UI", "Malgun Gothic", sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .deck {
+      height: 100vh;
+      position: relative;
+    }
+
+    .slide {
+      display: none;
+      height: 100vh;
+      padding: 3rem 4rem 5rem;
+      overflow-y: auto;
+      animation: fade 0.35s ease;
+    }
+
+    .slide.active { display: flex; flex-direction: column; }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .slide.title-slide {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: radial-gradient(ellipse at 50% 0%, #1e3a5f 0%, var(--bg) 55%);
+    }
+
+    h1 { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem; }
+    h2 { font-size: 1.75rem; color: var(--accent); margin-bottom: 1.25rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
+    h3 { font-size: 1.15rem; color: var(--accent2); margin: 1rem 0 0.5rem; }
+    p, li { line-height: 1.65; color: var(--muted); }
+    .slide > p.lead { font-size: 1.1rem; color: var(--text); margin-bottom: 1rem; }
+
+    .subtitle { font-size: 1.25rem; color: var(--muted); margin-bottom: 2rem; }
+    .meta { font-size: 0.9rem; color: var(--muted); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; flex: 1; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+    }
+
+    .card h3 { margin-top: 0; }
+    .card.highlight { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.2); }
+    .card.success { border-color: var(--accent2); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin: 0.75rem 0;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.55rem 0.75rem;
+      text-align: left;
+    }
+
+    th { background: var(--surface2); color: var(--accent); font-weight: 600; }
+    tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge.high { background: rgba(248,113,113,0.2); color: var(--danger); }
+    .badge.mid { background: rgba(251,191,36,0.2); color: var(--warn); }
+    .badge.low { background: rgba(52,211,153,0.2); color: var(--accent2); }
+    .badge.done { background: rgba(56,189,248,0.2); color: var(--accent); }
+
+    ul { margin: 0.5rem 0 0 1.25rem; }
+    li { margin: 0.35rem 0; }
+    li strong { color: var(--text); }
+
+    .arch {
+      font-family: "Consolas", "Cascadia Code", monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      white-space: pre;
+      color: #cbd5e1;
+    }
+
+    .timeline {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+    }
+
+    .step {
+      flex: 1;
+      min-width: 120px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+
+    .step .num {
+      display: block;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+
+    .step.done { border-color: var(--accent2); }
+
+    .stat-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+    }
+
+    .stat {
+      flex: 1;
+      min-width: 140px;
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .stat .value { font-size: 2rem; font-weight: 700; color: var(--accent); }
+    .stat .label { font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+
+    .compare-before { color: var(--danger); }
+    .compare-after { color: var(--accent2); }
+
+    .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .pros-cons ul { list-style: none; margin-left: 0; }
+    .pros-cons li::before { margin-right: 0.5rem; }
+
+    .nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      background: rgba(15, 20, 25, 0.92);
+      border-top: 1px solid var(--border);
+      z-index: 100;
+    }
+
+    .nav button {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .nav button:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+    .progress {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .progress-bar {
+      width: 200px;
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 0.25rem;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .check { color: var(--accent2); }
+    .partial { color: var(--warn); }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .footnote {
+      margin-top: auto;
+      padding-top: 1rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    @media print {
+      .slide { display: block !important; page-break-after: always; height: auto; min-height: 100vh; }
+      .nav { display: none; }
+    }
+
+    @media (max-width: 900px) {
+      .slide { padding: 2rem 1.5rem 4rem; }
+      .grid-2, .grid-3, .pros-cons { grid-template-columns: 1fr; }
+      h1 { font-size: 1.75rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck" id="deck">
+
+    <!-- 1 Title -->
+    <section class="slide title-slide active" data-slide="1">
+      <p class="meta">Samsung Health BMI 실습 · README Activity 5</p>
+      <h1>SHealth BMI</h1>
+      <p class="subtitle">생성형 AI 활용 클린코드 · 리팩토링 · TDD 회고</p>
+      <p class="meta">Java 21 · Maven · JUnit 5 · 2026-05-20</p>
+    </section>
+
+    <!-- 2 Agenda -->
+    <section class="slide" data-slide="2">
+      <h2>발표 목차</h2>
+      <p class="lead">README Activity 5 체크리스트 기준</p>
+      <div class="grid-2">
+        <div class="card">
+          <ol style="margin-left:1.25rem;color:var(--text);">
+            <li>실습 목표와 달성도</li>
+            <li>코드 품질 Before &amp; After</li>
+            <li>AI 활용 — 도움된 순간과 한계</li>
+            <li>TC 추가가 개선에 미친 영향 · 작성 팁</li>
+            <li>클린코드·리팩토링 장점과 어려운 점</li>
+          </ol>
+        </div>
+        <div class="card highlight">
+          <h3>참고 문서 (<code>docs/</code>)</h3>
+          <ul>
+            <li><code>code-smell-analysis.md</code> — 리팩토링 전</li>
+            <li><code>code-smell-analysis-after-refactoring.md</code> — 이후</li>
+            <li><code>refactoring-order-and-impact.md</code> — 개발 순서</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 Domain -->
+    <section class="slide" data-slide="3">
+      <h2>도메인 · 실습 목표</h2>
+      <p class="lead">삼성 헬스 CSV로 연령대별 BMI 분포(%)를 계산한다.</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3>BMI 분류 (README)</h3>
+          <table>
+            <tr><th>범주</th><th>조건</th></tr>
+            <tr><td>저체중</td><td>BMI ≤ 18.5</td></tr>
+            <tr><td>정상</td><td>18.5 &lt; BMI &lt; 23</td></tr>
+            <tr><td>과체중</td><td>23 ≤ BMI &lt; 25</td></tr>
+            <tr><td>비만</td><td>BMI ≥ 25</td></tr>
+          </table>
+          <p style="margin-top:0.75rem;font-size:0.85rem;">누락: <code>weight==0</code> / <code>height==0</code> → 동일 연령대 평균 보정</p>
+        </div>
+        <div class="card">
+          <h3>Activities (6시간)</h3>
+          <div class="timeline">
+            <div class="step done"><span class="num">1</span>스멜 분석</div>
+            <div class="step done"><span class="num">2</span>1차 리팩토링</div>
+            <div class="step done"><span class="num">3</span>UnitTest</div>
+            <div class="step done"><span class="num">4</span>SRP+기능</div>
+            <div class="step"><span class="num">5</span>회고·발표</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 Achievement -->
+    <section class="slide" data-slide="4">
+      <h2>1. 실습 목표와 달성도</h2>
+      <table>
+        <tr><th>목표 (README)</th><th>달성</th><th>근거</th></tr>
+        <tr>
+          <td>코드 스멜 식별·문서화</td>
+          <td><span class="badge done">완료</span></td>
+          <td><code>docs/code-smell-analysis.md</code>, PCTF 프롬프트</td>
+        </tr>
+        <tr>
+          <td>1차 리팩토링 (네이밍·상수·함수 추출)</td>
+          <td><span class="badge done">완료</span></td>
+          <td>Activity 2 — <code>BmiClassifier</code>, BMI=25 버그 수정</td>
+        </tr>
+        <tr>
+          <td>UnitTest (BMI·보정·분류·예외)</td>
+          <td><span class="badge done">완료</span></td>
+          <td>Activity 3 — <code>SHealthBMITest</code> 등 <strong>42건</strong> 통과</td>
+        </tr>
+        <tr>
+          <td>SRP 책임 분리</td>
+          <td><span class="badge done">완료</span></td>
+          <td>11개 클래스, <code>SHealth</code> Facade ~81줄</td>
+        </tr>
+        <tr>
+          <td>키 보정 (<code>height==0</code>)</td>
+          <td><span class="badge done">완료</span></td>
+          <td><code>HeightImputer</code> + TDD fixture</td>
+        </tr>
+        <tr>
+          <td>연령대 BMI 분포 비율</td>
+          <td><span class="badge done">완료</span></td>
+          <td><code>AgeDecadeStatistics</code>, <code>getRatio</code></td>
+        </tr>
+        <tr>
+          <td>정상 BMI 사용자 목록</td>
+          <td><span class="badge done">완료</span></td>
+          <td><code>getNormalBmiUserIds()</code></td>
+        </tr>
+        <tr>
+          <td>전체 사용자 범주별 비율</td>
+          <td><span class="badge done">완료</span></td>
+          <td><code>getOverallRatio(BmiCategory)</code></td>
+        </tr>
+        <tr>
+          <td>잔여 스멜 제거</td>
+          <td><span class="badge mid">부분</span></td>
+          <td>Imputer·<code>toPercentRatios</code> 중복 잔존 (중간)</td>
+        </tr>
+      </table>
+      <div class="stat-row">
+        <div class="stat"><div class="value">42</div><div class="label">JUnit 테스트</div></div>
+        <div class="stat"><div class="value">11</div><div class="label">메인 클래스</div></div>
+        <div class="stat"><div class="value">19</div><div class="label">테스트 fixture CSV</div></div>
+        <div class="stat"><div class="value">✓</div><div class="label">mvn test 통과</div></div>
+      </div>
+    </section>
+
+    <!-- 5 Before After metrics -->
+    <section class="slide" data-slide="5">
+      <h2>2. 코드 품질 Before &amp; After</h2>
+      <div class="stat-row">
+        <div class="stat">
+          <div class="value compare-before">~208</div>
+          <div class="label">Before: <code>SHealth</code> 줄 수</div>
+        </div>
+        <div class="stat">
+          <div class="value compare-after">~81</div>
+          <div class="label">After: Facade만</div>
+        </div>
+        <div class="stat">
+          <div class="value compare-before">99</div>
+          <div class="label">Before: <code>calculateBmi</code> 본문 줄</div>
+        </div>
+        <div class="stat">
+          <div class="value compare-after">7</div>
+          <div class="label">After: 파이프라인 오케스트레이션</div>
+        </div>
+      </div>
+      <table>
+        <tr><th>항목</th><th>Before</th><th>After</th></tr>
+        <tr><td>구조</td><td class="compare-before">God Class 1개</td><td class="compare-after">Facade + 10 협력 클래스</td></tr>
+        <tr><td><code>getBmiRatio</code></td><td class="compare-before">24분기 if-else</td><td class="compare-after"><code>EnumMap</code> 조회</td></tr>
+        <tr><td>BMI 경계</td><td class="compare-before">리터럴 분산</td><td class="compare-after"><code>BmiClassifier</code> 상수</td></tr>
+        <tr><td>BMI = 25</td><td class="compare-before">미분류 버그</td><td class="compare-after"><code>OBESITY</code> + TC</td></tr>
+        <tr><td>Long Method</td><td class="compare-before">99줄·51줄</td><td class="compare-after">메인 전 메서드 ≤20줄</td></tr>
+        <tr><td>테스트</td><td class="compare-before"><code>failedTest()</code> 플레이스홀더</td><td class="compare-after">경계·보정·API 통합 TC</td></tr>
+      </table>
+    </section>
+
+    <!-- 6 Architecture -->
+    <section class="slide" data-slide="6">
+      <h2>현재 아키텍처 (After)</h2>
+      <div class="grid-2">
+        <pre class="arch">SHealth (Facade)
+  ├── CsvHealthRecordLoader
+  ├── WeightImputer
+  ├── HeightImputer
+  ├── BmiClassifier (static)
+  ├── AgeDecadeStatistics
+  └── UserQueryService
+
+SHealthBMI.main → load → impute → BMI → stats → print</pre>
+        <div>
+          <h3>신규·공개 API (Activity 4)</h3>
+          <ul>
+            <li><code>getRatio(ageDecade, BmiCategory)</code></li>
+            <li><code>getBmiRatio(ageDecade, legacyType)</code> — 하위 호환</li>
+            <li><code>getNormalBmiUserIds()</code></li>
+            <li><code>getOverallRatio(BmiCategory)</code></li>
+          </ul>
+          <h3>메인 클래스 (11)</h3>
+          <p style="font-size:0.85rem;color:var(--muted);">
+            SHealth, SHealthBMI, BmiClassifier, BmiCategory, AgeDecade,
+            UserRecord, CsvHealthRecordLoader, WeightImputer, HeightImputer,
+            AgeDecadeStatistics, UserQueryService
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 Code smells -->
+    <section class="slide" data-slide="7">
+      <h2>코드 스멜 — 심각도 변화</h2>
+      <table>
+        <tr><th>스멜</th><th>Before</th><th>After</th></tr>
+        <tr>
+          <td>God Class</td>
+          <td><span class="badge high">높음</span></td>
+          <td><span class="badge done">해소</span></td>
+        </tr>
+        <tr>
+          <td>Long Method</td>
+          <td><span class="badge high">높음</span></td>
+          <td><span class="badge done">해소</span></td>
+        </tr>
+        <tr>
+          <td>24분기 중복</td>
+          <td><span class="badge high">높음</span></td>
+          <td><span class="badge done">해소</span></td>
+        </tr>
+        <tr>
+          <td>Magic Number (BMI)</td>
+          <td><span class="badge mid">중간</span></td>
+          <td><span class="badge done">해소</span></td>
+        </tr>
+        <tr>
+          <td>Imputer 쌍 중복</td>
+          <td>—</td>
+          <td><span class="badge mid">중간</span></td>
+        </tr>
+        <tr>
+          <td><code>toPercentRatios</code> 중복</td>
+          <td>—</td>
+          <td><span class="badge mid">중간</span></td>
+        </tr>
+      </table>
+      <p class="footnote">상세: <code>docs/code-smell-analysis-after-refactoring.md</code></p>
+    </section>
+
+    <!-- 8 Order -->
+    <section class="slide" data-slide="8">
+      <h2>개발 순서가 결과에 미친 영향</h2>
+      <p class="lead">실제: <strong>리팩토링·테스트(2→3) → SRP+기능(4)</strong> — README 순서와 일치</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3>✅ 실제 순서</h3>
+          <p>스멜 분석 → 1차 정리 → TC → 클래스 분리 + Height·조회 API</p>
+          <ul>
+            <li><code>HeightImputer</code>를 <code>WeightImputer</code> 패턴으로 대칭 추가</li>
+            <li>리팩토링 시 TC 42건으로 회귀 방어</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>⚠️ 가정: 기능 먼저</h3>
+          <p>God Class에 기능을 먼저 넣었다면</p>
+          <ul>
+            <li><code>SHealth</code> 300줄+ · Long Method 지속</li>
+            <li>height 보정 <strong>복붙</strong> 가능성</li>
+            <li>리팩토링 시 TC 대량 수정</li>
+          </ul>
+        </div>
+      </div>
+      <p class="footnote"><code>docs/refactoring-order-and-impact.md</code></p>
+    </section>
+
+    <!-- 9 AI -->
+    <section class="slide" data-slide="9">
+      <h2>3. AI(Cursor) 활용 — 도움 · 한계</h2>
+      <div class="pros-cons">
+        <div class="card success">
+          <h3>도움이 된 순간</h3>
+          <ul>
+            <li><strong>PCTF 프롬프트</strong> — Activity 1 스멜 분석·표 정리</li>
+            <li><strong>도메인 규칙 정렬</strong> — README·<code>.cursorrules</code> 기준 BMI=25 등 경계 검증</li>
+            <li><strong>리팩토링 설계</strong> — SRP 클래스 분리·Facade 패턴 제안</li>
+            <li><strong>TDD 보조</strong> — fixture CSV·<code>should_…_when_…</code> TC 초안</li>
+            <li><strong>문서화</strong> — <code>docs/</code>·Report/Prompting 워크플로</li>
+            <li><strong>회귀 확인</strong> — <code>mvn test</code> 실패 시 원인 추적</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>한계 · 주의</h3>
+          <ul>
+            <li>초기 분석이 <strong>리팩토링 전</strong> 코드 기준이면 After 문서와 혼동</li>
+            <li>대규모 변경을 <strong>한 커밋</strong>에 묶기 쉬움 → 단계 분리 필요</li>
+            <li>AI 제안 코드는 <strong>TC·도메인</strong>으로 반드시 검증</li>
+            <li>프로젝트 규칙(<code>AGENTS.md</code>) 없으면 스타일·20줄 규칙 이탈</li>
+            <li>“분석만” vs “구현” 지시를 명확히 구분해야 함</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 Tests -->
+    <section class="slide" data-slide="10">
+      <h2>4. TC가 개선에 미친 영향 · 작성 팁</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>영향</h3>
+          <ul>
+            <li><strong>BMI=25 버그</strong> — 경계 TC로 수정·고정 (<code>should_classifyAsObesity_when_bmiIs25</code>)</li>
+            <li><strong>Activity 4</strong> — 기능별 TDD 커밋(연령대·키·정상목록·전체비율)</li>
+            <li><strong>리팩토링 안전망</strong> — 17건 → 42건으로 회귀 범위 확대</li>
+            <li><strong>작은 fixture</strong> — <code>src/test/resources/*.csv</code> 19개로 시나리오 분리</li>
+          </ul>
+        </div>
+        <div class="card highlight">
+          <h3>TC 작성 팁 (본 프로젝트)</h3>
+          <ul>
+            <li>이름: <code>should_[결과]_when_[조건]</code> (영문, `.cursorrules`)</li>
+            <li>경계값 <strong>18.5, 23, 25</strong> 각각 한 TC</li>
+            <li>보정: 동 연령대만 / 타 연령대 미적용 / 유효값 0건</li>
+            <li>비율: 합 100%·빈 연령대 0%·전체 vs 연령대 대비</li>
+            <li>예외: 빈 파일·컬럼 부족·숫자 파싱 실패</li>
+            <li>단위(<code>BmiClassifier</code>) + 통합(<code>SHealth</code>+CSV) 병행</li>
+          </ul>
+        </div>
+      </div>
+      <table style="margin-top:1rem;">
+        <tr><th>테스트 클래스</th><th>건수(약)</th><th>역할</th></tr>
+        <tr><td><code>SHealthBMITest</code></td><td>35</td><td>통합·경계·보정·비율</td></tr>
+        <tr><td><code>UserQueryServiceTest</code></td><td>4</td><td>정상 목록·전체 비율</td></tr>
+        <tr><td><code>HeightImputerTest</code></td><td>2</td><td>키 보정 단위</td></tr>
+        <tr><td><code>AgeDecadeStatisticsTest</code></td><td>1</td><td>연령대 통계</td></tr>
+      </table>
+    </section>
+
+    <!-- 11 Clean code -->
+    <section class="slide" data-slide="11">
+      <h2>5. 클린코드 · 리팩토링 — 장점과 어려운 점</h2>
+      <div class="pros-cons">
+        <div class="card success">
+          <h3>장점</h3>
+          <ul>
+            <li>클래스 이름만으로 <strong>파이프라인</strong> 이해 가능</li>
+            <li>신규 기능(키 보정)을 기존 패턴에 맞춰 추가 용이</li>
+            <li>스멜 문서 → 리팩토링 → TC의 <strong>추적 가능한</strong> 개선 루프</li>
+            <li>AI와 협업 시 규칙 파일로 품질 기준 공유</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>어려운 점</h3>
+          <ul>
+            <li>Activity 4에서 <strong>구조+기능</strong> 동시 변경 — 커밋·리뷰 부담</li>
+            <li>잔여 중복(Imputer)은 “돌아가니까” 남기기 쉬움</li>
+            <li>legacy API(<code>getBmiRatio(int,int)</code>)와 enum 공존</li>
+            <li>문서 3종(Before/After/순서) <strong>동기화</strong> 필요</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 Next -->
+    <section class="slide" data-slide="12">
+      <h2>다음 단계 · Q&amp;A</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>잔여 개선 (Activity 2 연계)</h3>
+          <ol style="margin-left:1.25rem;color:var(--text);">
+            <li><code>BmiRatioAggregator</code> — <code>toPercentRatios</code> 통합</li>
+            <li>Imputer 공통화 — <code>DecadeAverageImputer</code></li>
+            <li><code>AgeDecade.VALUES</code> 단일 출처</li>
+            <li><code>SHealthBMI</code> 출력 루프 정리</li>
+          </ol>
+        </div>
+        <div class="card highlight">
+          <h3>데모 시나리오</h3>
+          <ol style="margin-left:1.25rem;color:var(--text);">
+            <li><code>mvn test</code> — 42 tests passed</li>
+            <li><code>java … SHealthBMI shealth.dat</code> — 연령대·전체 비율 출력</li>
+            <li>Before 문서 vs 현재 <code>SHealth.java</code> 81줄 대비</li>
+          </ol>
+        </div>
+      </div>
+      <p class="footnote" style="margin-top:2rem;text-align:center;font-size:1rem;color:var(--text);">
+        감사합니다 · 질문 환영
+      </p>
+    </section>
+
+  </div>
+
+  <nav class="nav" aria-label="슬라이드 탐색">
+    <button type="button" id="prev" aria-label="이전">← 이전</button>
+    <div>
+      <div class="progress" id="progressText">1 / 12</div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:8.33%"></div></div>
+    </div>
+    <button type="button" id="next" aria-label="다음">다음 →</button>
+  </nav>
+
+  <script>
+    const slides = document.querySelectorAll(".slide");
+    const total = slides.length;
+    let current = 0;
+
+    const progressText = document.getElementById("progressText");
+    const progressFill = document.getElementById("progressFill");
+
+    function show(index) {
+      if (index < 0) index = 0;
+      if (index >= total) index = total - 1;
+      current = index;
+      slides.forEach((s, i) => s.classList.toggle("active", i === current));
+      progressText.textContent = (current + 1) + " / " + total;
+      progressFill.style.width = ((current + 1) / total * 100) + "%";
+    }
+
+    document.getElementById("prev").addEventListener("click", () => show(current - 1));
+    document.getElementById("next").addEventListener("click", () => show(current + 1));
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
+        e.preventDefault();
+        show(current + 1);
+      }
+      if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        e.preventDefault();
+        show(current - 1);
+      }
+      if (e.key === "Home") show(0);
+      if (e.key === "End") show(total - 1);
+    });
+
+    show(0);
+  </script>
+</body>
+</html>
