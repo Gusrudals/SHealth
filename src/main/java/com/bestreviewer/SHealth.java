@@ -4,48 +4,82 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+/**
+ * Loads Samsung Health CSV data, imputes missing weights, computes BMI, and age-decade statistics.
+ */
 public class SHealth {
+
+    private static final double MISSING_WEIGHT = 0.0;
+    private static final double PERCENT_SCALE = 100.0;
+    private static final int DECADE_WIDTH = 10;
+    private static final int MIN_AGE_DECADE = 20;
+    private static final int MAX_AGE_DECADE = 70;
+    private static final int DECADE_STEP = 10;
+    private static final int MAX_RECORDS = 10000;
+    static final int[] AGE_DECADES = {20, 30, 40, 50, 60, 70};
+
     private int count;
-    private int[] ages = new int[10000];
-    private double[] heights = new double[10000];
-    private double[] weights = new double[10000];
-    private double[] bmis = new double[10000];
+    private final int[] ages = new int[MAX_RECORDS];
+    private final double[] heights = new double[MAX_RECORDS];
+    private final double[] weights = new double[MAX_RECORDS];
+    private final double[] bmis = new double[MAX_RECORDS];
+    private final Map<Integer, EnumMap<BmiCategory, Double>> ratiosByDecade = new HashMap<>();
 
-    private double underweight20;
-    private double underweight30;
-    private double underweight40;
-    private double underweight50;
-    private double underweight60;
-    private double underweight70;
-    private double normalweight20;
-    private double normalweight30;
-    private double normalweight40;
-    private double normalweight50;
-    private double normalweight60;
-    private double normalweight70;
-    private double overweight20;
-    private double overweight30;
-    private double overweight40;
-    private double overweight50;
-    private double overweight60;
-    private double overweight70;
-    private double obesity20;
-    private double obesity30;
-    private double obesity40;
-    private double obesity50;
-    private double obesity60;
-    private double obesity70;
-
-    public int calculateBmi(String filename) {
+    /**
+     * Loads data, imputes weights, computes BMI and age-decade ratio statistics.
+     *
+     * @param filename path to CSV file
+     * @return number of records loaded
+     * @throws IOException if the file cannot be read
+     */
+    public int calculateBmi(String filename) throws IOException {
         count = 0;
-        try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
+        loadRecordsFromCsv(filename);
+        imputeZeroWeightsByAgeDecade();
+        computeAllBmis();
+        aggregateRatiosByAgeDecade();
+        return count;
+    }
+
+    /**
+     * @param ageDecade decade start age (20, 30, …, 70)
+     * @param type      legacy category code (100–400)
+     * @return percentage for that decade and category, or 0.0 if unknown
+     */
+    public double getBmiRatio(int ageDecade, int type) {
+        BmiCategory category = BmiCategory.fromLegacyType(type);
+        if (category == null) {
+            return 0.0;
+        }
+        return getRatio(ageDecade, category);
+    }
+
+    /**
+     * @param ageDecade decade start age (20, 30, …, 70)
+     * @param category  BMI category
+     * @return percentage for that decade and category, or 0.0 if not computed
+     */
+    public double getRatio(int ageDecade, BmiCategory category) {
+        EnumMap<BmiCategory, Double> ratios = ratiosByDecade.get(ageDecade);
+        if (ratios == null) {
+            return 0.0;
+        }
+        Double ratio = ratios.get(category);
+        return ratio != null ? ratio : 0.0;
+    }
+
+    private void loadRecordsFromCsv(String filename) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            reader.readLine();
             String line;
-            br.readLine(); //첫번째 줄 읽기
-            while ((line = br.readLine()) != null) {
-                List<String> tokens = split(line, ',');
-                if (tokens.size() == 0) {
+            while ((line = reader.readLine()) != null) {
+                List<String> tokens = parseCsvLine(line, ',');
+                if (tokens.isEmpty()) {
                     break;
                 }
                 ages[count] = Integer.parseInt(tokens.get(1));
@@ -53,147 +87,84 @@ public class SHealth {
                 heights[count] = Double.parseDouble(tokens.get(3));
                 count++;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+    }
 
-        // 데이터 수집 중 누락된 체중에 나이대(ex. 20대, 30대, 40대 등)의 평균 체중을 적용
-        for (int a = 20; a <= 70; a += 10) {
-            double sum = 0;
-            int ageCount = 0;
-            for (int i = 0; i < count; i++) {
-                if (ages[i] >= a && ages[i] < a + 10) {
-                    if (weights[i] == 0.0) {
-                        continue;
-                    }
-                    sum += weights[i];
-                    ageCount++;
-                }
-            }
-            for (int i = 0; i < count; i++) {
-                if (ages[i] >= a && ages[i] < a + 10) {
-                    if (weights[i] == 0.0) {
-                        weights[i] = sum / ageCount;
-                    }
-                }
-            }
+    private void imputeZeroWeightsByAgeDecade() {
+        for (int ageDecade = MIN_AGE_DECADE; ageDecade <= MAX_AGE_DECADE; ageDecade += DECADE_STEP) {
+            imputeDecade(ageDecade);
         }
+    }
 
-        // BMI 계산하기
+    private void imputeDecade(int ageDecade) {
+        double average = averageValidWeightInDecade(ageDecade);
         for (int i = 0; i < count; i++) {
-            bmis[i] = weights[i] / ((heights[i] / 100.0) * (heights[i] / 100.0));
-        }
-
-        // 나이대(ex. 20대, 30대, 40대 등)의 BMI기준 저체중, 정상체중, 과체중, 비만 비율 계산
-        for (int a = 20; a <= 70; a += 10) {
-            int underweight = 0;
-            int normalweight = 0;
-            int overweight = 0;
-            int obesity = 0;
-            int sum = 0;
-            for (int i = 0; i < count; i++) {
-                if (ages[i] >= a && ages[i] < a + 10) {
-                    sum++;
-                    if (bmis[i] <= 18.5) {
-                        underweight++;
-                    } else if (bmis[i] > 18.5 && bmis[i] < 23) {
-                        normalweight++;
-                    } else if (bmis[i] >= 23 && bmis[i] < 25) {
-                        overweight++;
-                    } else if (bmis[i] > 25) {
-                        obesity++;
-                    }
-                }
-            }
-            if (a == 20) {
-                underweight20 = (double) underweight * 100 / sum;
-                normalweight20 = (double) normalweight * 100 / sum;
-                overweight20 = (double) overweight * 100 / sum;
-                obesity20 = (double) obesity * 100 / sum;
-            } else if (a == 30) {
-                underweight30 = (double) underweight * 100 / sum;
-                normalweight30 = (double) normalweight * 100 / sum;
-                overweight30 = (double) overweight * 100 / sum;
-                obesity30 = (double) obesity * 100 / sum;
-            } else if (a == 40) {
-                underweight40 = (double) underweight * 100 / sum;
-                normalweight40 = (double) normalweight * 100 / sum;
-                overweight40 = (double) overweight * 100 / sum;
-                obesity40 = (double) obesity * 100 / sum;
-            } else if (a == 50) {
-                underweight50 = (double) underweight * 100 / sum;
-                normalweight50 = (double) normalweight * 100 / sum;
-                overweight50 = (double) overweight * 100 / sum;
-                obesity50 = (double) obesity * 100 / sum;
-            } else if (a == 60) {
-                underweight60 = (double) underweight * 100 / sum;
-                normalweight60 = (double) normalweight * 100 / sum;
-                overweight60 = (double) overweight * 100 / sum;
-                obesity60 = (double) obesity * 100 / sum;
-            } else if (a == 70) {
-                underweight70 = (double) underweight * 100 / sum;
-                normalweight70 = (double) normalweight * 100 / sum;
-                overweight70 = (double) overweight * 100 / sum;
-                obesity70 = (double) obesity * 100 / sum;
+            if (isInAgeDecade(ages[i], ageDecade) && weights[i] == MISSING_WEIGHT) {
+                weights[i] = average;
             }
         }
-        return count;
     }
 
-    public double getBmiRatio(int ageClass, int type) {
-        if (ageClass == 20 && type == 100) {
-            return underweight20;
-        } else if (ageClass == 20 && type == 200) {
-            return normalweight20;
-        } else if (ageClass == 20 && type == 300) {
-            return overweight20;
-        } else if (ageClass == 20 && type == 400) {
-            return obesity20;
-        } else if (ageClass == 30 && type == 100) {
-            return underweight30;
-        } else if (ageClass == 30 && type == 200) {
-            return normalweight30;
-        } else if (ageClass == 30 && type == 300) {
-            return overweight30;
-        } else if (ageClass == 30 && type == 400) {
-            return obesity30;
-        } else if (ageClass == 40 && type == 100) {
-            return underweight40;
-        } else if (ageClass == 40 && type == 200) {
-            return normalweight40;
-        } else if (ageClass == 40 && type == 300) {
-            return overweight40;
-        } else if (ageClass == 40 && type == 400) {
-            return obesity40;
-        } else if (ageClass == 50 && type == 100) {
-            return underweight50;
-        } else if (ageClass == 50 && type == 200) {
-            return normalweight50;
-        } else if (ageClass == 50 && type == 300) {
-            return overweight50;
-        } else if (ageClass == 50 && type == 400) {
-            return obesity50;
-        } else if (ageClass == 60 && type == 100) {
-            return underweight60;
-        } else if (ageClass == 60 && type == 200) {
-            return normalweight60;
-        } else if (ageClass == 60 && type == 300) {
-            return overweight60;
-        } else if (ageClass == 60 && type == 400) {
-            return obesity60;
-        } else if (ageClass == 70 && type == 100) {
-            return underweight70;
-        } else if (ageClass == 70 && type == 200) {
-            return normalweight70;
-        } else if (ageClass == 70 && type == 300) {
-            return overweight70;
-        } else if (ageClass == 70 && type == 400) {
-            return obesity70;
+    private double averageValidWeightInDecade(int ageDecade) {
+        double sum = 0.0;
+        int validCount = 0;
+        for (int i = 0; i < count; i++) {
+            if (isInAgeDecade(ages[i], ageDecade) && weights[i] != MISSING_WEIGHT) {
+                sum += weights[i];
+                validCount++;
+            }
         }
-        return 0.0;
+        return sum / validCount;
     }
 
-    private List<String> split(String line, char delimiter) {
+    private void computeAllBmis() {
+        for (int i = 0; i < count; i++) {
+            bmis[i] = BmiClassifier.computeBmi(weights[i], heights[i]);
+        }
+    }
+
+    private void aggregateRatiosByAgeDecade() {
+        ratiosByDecade.clear();
+        for (int ageDecade = MIN_AGE_DECADE; ageDecade <= MAX_AGE_DECADE; ageDecade += DECADE_STEP) {
+            storeDecadeRatios(ageDecade, computeDecadeRatios(ageDecade));
+        }
+    }
+
+    private EnumMap<BmiCategory, Double> computeDecadeRatios(int ageDecade) {
+        int[] counts = new int[BmiCategory.values().length];
+        int total = 0;
+        for (int i = 0; i < count; i++) {
+            if (!isInAgeDecade(ages[i], ageDecade)) {
+                continue;
+            }
+            total++;
+            BmiCategory category = BmiClassifier.classify(bmis[i]);
+            counts[category.ordinal()]++;
+        }
+        return toPercentRatios(counts, total);
+    }
+
+    private EnumMap<BmiCategory, Double> toPercentRatios(int[] counts, int total) {
+        EnumMap<BmiCategory, Double> ratios = new EnumMap<>(BmiCategory.class);
+        if (total == 0) {
+            return ratios;
+        }
+        for (BmiCategory category : BmiCategory.values()) {
+            double percent = (double) counts[category.ordinal()] * PERCENT_SCALE / total;
+            ratios.put(category, percent);
+        }
+        return ratios;
+    }
+
+    private void storeDecadeRatios(int ageDecade, EnumMap<BmiCategory, Double> ratios) {
+        ratiosByDecade.put(ageDecade, ratios);
+    }
+
+    private static boolean isInAgeDecade(int age, int ageDecade) {
+        return age >= ageDecade && age < ageDecade + DECADE_WIDTH;
+    }
+
+    private List<String> parseCsvLine(String line, char delimiter) {
         List<String> tokens = new ArrayList<>();
         int start = 0;
         int end = line.indexOf(delimiter);

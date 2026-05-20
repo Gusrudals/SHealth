@@ -1,0 +1,41 @@
+---
+description: SHealth BMI 프로젝트 도메인·구조·실습 목표
+alwaysApply: true
+---
+
+# SHealth BMI 프로젝트
+
+Java(Maven) 실습: 삼성 헬스 CSV(`shealth.dat`)로 연령대별 BMI 분포를 계산한다.
+
+## 패키지·빌드
+
+- 소스: `src/main/java/com/bestreviewer/`
+- 테스트: `src/test/java/com/bestreviewer/`
+- **Java 21**, JUnit 5 + Mockito, Maven (`mvn test`) — 스택·코딩 스타일은 루트 [`.cursorrules`](../../.cursorrules) 최우선
+- 데이터 파일: 프로젝트 루트 `shealth.dat` (헤더 `id,age,weight,height`)
+
+## 도메인 규칙 (README 기준, 변경 시 테스트도 함께 수정)
+
+| 항목 | 규칙 |
+|------|------|
+| BMI | `체중(kg) / (키(m))²`, 키는 cm → m 변환 |
+| 저체중 | BMI ≤ 18.5 |
+| 정상체중 | 18.5 < BMI < 23 |
+| 과체중 | 23 ≤ BMI < 25 |
+| 비만 | BMI ≥ 25 |
+| 체중 누락 | `weight == 0` → 동일 연령대(10년 단위, 예: 20대=20~29) 평균 체중으로 보정 |
+| 연령대 통계 | 20·30·40·50·60·70대별 각 BMI 범주 **비율(%)** |
+
+## 계획된 기능 (README Activities 4)
+
+- SRP에 따른 책임 분리
+- 특정 연령대 BMI 분포 비율
+- `height == 0` 시 연령대 평균 키 보정
+- BMI 정상 범위 사용자 목록 조회
+- 전체 사용자 대비 BMI 범주별 비율
+
+## AI 작업 시 원칙
+
+- README의 실습 단계(분석 → 리팩토링 → 테스트 → 기능 개선)를 존중한다.
+- 기존 `SHealth`/`SHealthBMI` 동작을 깨지 않도록 변경하고, 리팩토링 시 단위 테스트를 먼저·또는 동시에 보강한다.
+- 외부 라이브러리는 `pom.xml`에 명시된 것(JUnit, Mockito, Hamcrest, ApprovalTests) 위주로 사용한다.
