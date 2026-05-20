@@ -16,17 +16,39 @@
 - 경로: `Report/{번호}_{작업 title명}.md`
 - 현재 세션에서 수행한 작업을 마크다운 **작업 보고서**로 정리 (고정 템플릿 없음).
 
-## 2. Prompting 저장
+## 2. Prompting 저장 (1번 직후, 커밋 전 필수)
 
-- 경로: `Prompting/{번호}_{작업 title명}-Prompting.md` (Report와 **동일 번호·title**)
-- `scripts/` Python, JSONL 직접 읽기, `export-cursor-transcript.py` **사용 금지**.
-- 이 대화 **전체**를 Cursor **Export Transcript** 형식으로 **직접 작성**:
-  - 1행: `# {첫 사용자 메시지 요약 또는 작업 title명}`
-  - 2행: `_Exported on M/D/YYYY at HH:MM:SS GMT+9 from Cursor (unknown)_`
-  - 턴: `**User**` / `**Cursor**`, 사이 `---`
-  - 사용자 본문은 `<user_query>` 없이 원문만
-  - **포함**: 모든 사용자·어시스턴트 턴 (요약본만 저장 금지)
-  - **제외**: tool, thinking, 시스템·메타 메시지
+- **`.cursor/commands/scripts/export-cursor-transcript.py`** 로 **지금 이 대화창**에 해당하는 JSONL만 읽어 Cursor **Export Transcript** 형식 MD로 저장합니다.
+- **저장**: `Prompting/{번호}_{작업 title명}-Prompting.md` (1번과 **동일** `{번호}_{작업 title명}`).
+- 실행 시 **프로젝트 루트**를 현재 디렉터리로 둡니다 (`-o Prompting/…` 경로 기준).
+- (선택) 1행 제목: `--title "{작업 title명}"` — 생략 시 첫 사용자 메시지 요약.
+
+### 현재 대화 JSONL 식별 (필수)
+
+- **금지**: `--project-slug` 만으로 “가장 최근” JSONL을 고르지 않습니다 (다른 채팅이 선택될 수 있음).
+- **우선**: Cursor가 제공하는 **현재 대화 ID** →  
+  `~/.cursor/projects/e-DEV-SHealth-04/agent-transcripts/<id>/<id>.jsonl`  
+  (`--conversation-id` 는 `~/.cursor/projects` 아래 프로젝트를 검색해 해당 ID를 찾습니다.)
+- **보조**: 위 ID를 모르면 `agent-transcripts` 아래 JSONL을 검색해 **이번 세션의 사용자 메시지·주제**와 일치하는 파일을 찾습니다.
+- **불가 시**: 사용자에게 대화 ID 또는 확인을 요청합니다. **잘못된 JSONL로 export한 뒤 커밋하지 않습니다.**
+
+```bash
+python .cursor/commands/scripts/export-cursor-transcript.py --conversation-id <현재-대화-uuid> \
+  -o Prompting/{번호}_{작업title}-Prompting.md
+```
+
+또는 JSONL 경로를 직접 지정:
+
+```bash
+python .cursor/commands/scripts/export-cursor-transcript.py \
+  "%USERPROFILE%\.cursor\projects\e-DEV-SHealth-04\agent-transcripts\<id>\<id>.jsonl" \
+  -o Prompting/{번호}_{작업title}-Prompting.md
+```
+
+### export 후 확인
+
+- 파일이 생성되었고, `**User**` / `**Cursor**` 턴과 `---` 구분이 있는지 확인합니다.
+- tool·thinking 내용은 스크립트가 제외합니다. 수동으로 JSONL을 읽어 덧붙이지 않습니다.
 
 ## 3. Git 커밋
 
