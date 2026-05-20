@@ -6,7 +6,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SHealthBMITest {
@@ -121,6 +124,38 @@ class SHealthBMITest {
         Path csv = resourcePath("bad-number.csv");
         SHealth shealth = new SHealth();
         assertThrows(NumberFormatException.class, () -> shealth.calculateBmi(csv.toString()));
+    }
+
+    @Test
+    void should_imputeDecadeAverageHeight_when_heightIsZero() throws IOException {
+        Path csv = resourcePath("impute-height.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        assertEquals(33.33, shealth.getRatio(20, BmiCategory.OVERWEIGHT), 0.01);
+        assertEquals(66.67, shealth.getRatio(20, BmiCategory.NORMAL), 0.01);
+    }
+
+    @Test
+    void should_returnNormalBmiUserIds_when_mixedCategoriesPresent() throws IOException {
+        Path csv = resourcePath("normal-users.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        List<Integer> normalIds = shealth.getNormalBmiUserIds();
+        assertIterableEquals(List.of(2, 4), normalIds);
+    }
+
+    @Test
+    void should_returnOverallRatios_when_allCategoriesPresent() throws IOException {
+        Path csv = resourcePath("overall-ratio.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        assertEquals(25.0, shealth.getOverallRatio(BmiCategory.UNDERWEIGHT), 0.01);
+        assertEquals(25.0, shealth.getOverallRatio(BmiCategory.NORMAL), 0.01);
+        assertEquals(25.0, shealth.getOverallRatio(BmiCategory.OVERWEIGHT), 0.01);
+        assertEquals(25.0, shealth.getOverallRatio(BmiCategory.OBESITY), 0.01);
     }
 
     private Path resourcePath(String name) throws IOException {
