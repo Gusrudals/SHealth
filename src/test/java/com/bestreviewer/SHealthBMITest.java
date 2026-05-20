@@ -169,6 +169,30 @@ class SHealthBMITest {
     }
 
     @Test
+    void should_returnEmptyList_when_dataNotLoaded() {
+        SHealth shealth = new SHealth();
+        assertIterableEquals(List.of(), shealth.getNormalBmiUserIds());
+    }
+
+    @Test
+    void should_returnEmptyList_when_noNormalUsers() throws IOException {
+        Path csv = resourcePath("normal-none.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        assertIterableEquals(List.of(), shealth.getNormalBmiUserIds());
+    }
+
+    @Test
+    void should_includeUser_when_weightImputedToNormalBmi() throws IOException {
+        Path csv = resourcePath("normal-after-weight-impute.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        assertIterableEquals(List.of(1, 2), shealth.getNormalBmiUserIds());
+    }
+
+    @Test
     void should_returnOverallRatios_when_allCategoriesPresent() throws IOException {
         Path csv = resourcePath("overall-ratio.csv");
         SHealth shealth = new SHealth();

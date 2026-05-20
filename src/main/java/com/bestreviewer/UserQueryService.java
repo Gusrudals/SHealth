@@ -47,7 +47,7 @@ public class UserQueryService {
     }
 
     private static boolean isNormalBmi(double bmi) {
-        return bmi > BmiClassifier.UNDERWEIGHT_MAX && bmi < BmiClassifier.NORMAL_MAX;
+        return BmiClassifier.classify(bmi) == BmiCategory.NORMAL;
     }
 
     private EnumMap<BmiCategory, Double> toPercentRatios(int[] counts, int total) {
