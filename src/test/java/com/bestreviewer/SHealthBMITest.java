@@ -158,6 +158,55 @@ class SHealthBMITest {
         assertEquals(25.0, shealth.getOverallRatio(BmiCategory.OBESITY), 0.01);
     }
 
+    @Test
+    void should_returnEqualRatios_when_twentiesHaveOnePerCategory() throws IOException {
+        Path csv = resourcePath("decade-20-four-categories.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        assertEquals(25.0, shealth.getRatio(20, BmiCategory.UNDERWEIGHT), 0.01);
+        assertEquals(25.0, shealth.getRatio(20, BmiCategory.NORMAL), 0.01);
+        assertEquals(25.0, shealth.getRatio(20, BmiCategory.OVERWEIGHT), 0.01);
+        assertEquals(25.0, shealth.getRatio(20, BmiCategory.OBESITY), 0.01);
+    }
+
+    @Test
+    void should_returnDecadeRatios_when_thirtiesMixedCategories() throws IOException {
+        Path csv = resourcePath("decade-30-mixed.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        assertEquals(33.33, shealth.getRatio(30, BmiCategory.UNDERWEIGHT), 0.01);
+        assertEquals(33.33, shealth.getRatio(30, BmiCategory.NORMAL), 0.01);
+        assertEquals(0.0, shealth.getRatio(30, BmiCategory.OVERWEIGHT), 0.01);
+        assertEquals(33.33, shealth.getRatio(30, BmiCategory.OBESITY), 0.01);
+    }
+
+    @Test
+    void should_returnZeroRatios_when_decadeHasNoUsers() throws IOException {
+        Path csv = resourcePath("decade-empty-40s.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        assertEquals(0.0, shealth.getRatio(40, BmiCategory.UNDERWEIGHT), 0.01);
+        assertEquals(0.0, shealth.getRatio(40, BmiCategory.NORMAL), 0.01);
+        assertEquals(0.0, shealth.getRatio(40, BmiCategory.OVERWEIGHT), 0.01);
+        assertEquals(0.0, shealth.getRatio(40, BmiCategory.OBESITY), 0.01);
+    }
+
+    @Test
+    void should_sumTo100Percent_when_decadeHasUsers() throws IOException {
+        Path csv = resourcePath("decade-20-four-categories.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        double sum = shealth.getRatio(20, BmiCategory.UNDERWEIGHT)
+                + shealth.getRatio(20, BmiCategory.NORMAL)
+                + shealth.getRatio(20, BmiCategory.OVERWEIGHT)
+                + shealth.getRatio(20, BmiCategory.OBESITY);
+        assertEquals(100.0, sum, 0.01);
+    }
+
     private Path resourcePath(String name) throws IOException {
         URL url = getClass().getClassLoader().getResource(name);
         if (url == null) {
