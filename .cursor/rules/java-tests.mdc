@@ -1,0 +1,43 @@
+---
+description: SHealth BMI 단위 테스트 작성 규칙
+globs: src/test/**/*.java
+alwaysApply: false
+---
+
+# 단위 테스트 규칙
+
+JUnit 5 + Mockito (`org.junit.jupiter`, `org.mockito`). 테스트 클래스: `SHealthBMITest` 또는 분리된 `*Test` 클래스. 루트 [`.cursorrules`](../../.cursorrules)와 충돌 시 `.cursorrules`를 따른다.
+
+## 필수 커버리지 (README Activities 3·4)
+
+1. **BMI 계산** — 알려진 체중·키 → 기대 BMI (소수 오차는 `assertEquals(expected, actual, delta)`)
+2. **체중 보정** — `weight == 0`인 레코드가 동 연령대 평균으로 대체되는지
+3. **BMI 분류** — 경계값: 18.5, 23, 25 및 각 구간 대표값
+4. **예외** — 빈 파일, 잘못된 컬럼 수, 연령대에 유효 체중이 없어 평균 불가 등
+
+## 추가 시 권장
+
+- 키 보정(`height == 0`) TC
+- 연령대별 비율 합이 100%에 근접하는지
+- 정상 BMI 사용자 목록·전체 대비 비율 API
+
+## 스타일
+
+```java
+@Test
+void should_classifyAsUnderweight_when_bmiIs18_5() {
+    assertEquals(BmiCategory.UNDERWEIGHT, classifier.classify(18.5));
+}
+```
+
+- 테스트 메서드명: **`should_[결과]_when_[조건]`** (`.cursorrules` — 한글·기타 패턴 사용하지 않음)
+- 파일 I/O가 필요하면 `src/test/resources/`에 작은 fixture CSV 사용
+- `fail()` 플레이스홀더 테스트는 제거하고 의미 있는 assertion으로 교체
+
+## 실행
+
+```bash
+mvn test
+```
+
+리팩토링 전후 동일 fixture로 회귀를 확인한다.
