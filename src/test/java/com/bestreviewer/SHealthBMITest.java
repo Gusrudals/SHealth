@@ -205,6 +205,74 @@ class SHealthBMITest {
     }
 
     @Test
+    void should_returnOverallRatios_when_categoriesUneven() throws IOException {
+        Path csv = resourcePath("overall-uneven.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        assertEquals(33.33, shealth.getOverallRatio(BmiCategory.UNDERWEIGHT), 0.01);
+        assertEquals(66.67, shealth.getOverallRatio(BmiCategory.NORMAL), 0.01);
+        assertEquals(0.0, shealth.getOverallRatio(BmiCategory.OVERWEIGHT), 0.01);
+        assertEquals(0.0, shealth.getOverallRatio(BmiCategory.OBESITY), 0.01);
+    }
+
+    @Test
+    void should_sumTo100Percent_when_allUsersLoaded() throws IOException {
+        Path csv = resourcePath("overall-ratio.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        double sum = shealth.getOverallRatio(BmiCategory.UNDERWEIGHT)
+                + shealth.getOverallRatio(BmiCategory.NORMAL)
+                + shealth.getOverallRatio(BmiCategory.OVERWEIGHT)
+                + shealth.getOverallRatio(BmiCategory.OBESITY);
+        assertEquals(100.0, sum, 0.01);
+    }
+
+    @Test
+    void should_returnZeroOverallRatios_when_notLoaded() {
+        SHealth shealth = new SHealth();
+
+        assertEquals(0.0, shealth.getOverallRatio(BmiCategory.UNDERWEIGHT), 0.01);
+        assertEquals(0.0, shealth.getOverallRatio(BmiCategory.NORMAL), 0.01);
+        assertEquals(0.0, shealth.getOverallRatio(BmiCategory.OVERWEIGHT), 0.01);
+        assertEquals(0.0, shealth.getOverallRatio(BmiCategory.OBESITY), 0.01);
+    }
+
+    @Test
+    void should_returnZeroOverallRatios_when_noUsers() throws IOException {
+        Path csv = resourcePath("empty-data.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        assertEquals(0.0, shealth.getOverallRatio(BmiCategory.UNDERWEIGHT), 0.01);
+        assertEquals(0.0, shealth.getOverallRatio(BmiCategory.NORMAL), 0.01);
+        assertEquals(0.0, shealth.getOverallRatio(BmiCategory.OVERWEIGHT), 0.01);
+        assertEquals(0.0, shealth.getOverallRatio(BmiCategory.OBESITY), 0.01);
+    }
+
+    @Test
+    void should_differFromDecadeRatio_when_agesSpanDecades() throws IOException {
+        Path csv = resourcePath("overall-decade-contrast.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        assertEquals(100.0, shealth.getRatio(20, BmiCategory.UNDERWEIGHT), 0.01);
+        assertEquals(50.0, shealth.getOverallRatio(BmiCategory.UNDERWEIGHT), 0.01);
+        assertEquals(50.0, shealth.getOverallRatio(BmiCategory.NORMAL), 0.01);
+    }
+
+    @Test
+    void should_reflectImputedBmi_when_weightOrHeightZero() throws IOException {
+        Path csv = resourcePath("overall-after-weight-impute.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        assertEquals(100.0, shealth.getOverallRatio(BmiCategory.NORMAL), 0.01);
+        assertEquals(0.0, shealth.getOverallRatio(BmiCategory.UNDERWEIGHT), 0.01);
+    }
+
+    @Test
     void should_returnEqualRatios_when_twentiesHaveOnePerCategory() throws IOException {
         Path csv = resourcePath("decade-20-four-categories.csv");
         SHealth shealth = new SHealth();
