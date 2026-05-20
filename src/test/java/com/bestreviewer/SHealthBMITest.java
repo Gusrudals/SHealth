@@ -137,6 +137,28 @@ class SHealthBMITest {
     }
 
     @Test
+    void should_imputeOnlySameDecadeHeight_when_multipleDecadesPresent() throws IOException {
+        Path csv = resourcePath("impute-cross-decade-height.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        assertEquals(33.33, shealth.getRatio(20, BmiCategory.OBESITY), 0.01);
+        assertEquals(33.33, shealth.getRatio(20, BmiCategory.OVERWEIGHT), 0.01);
+        assertEquals(33.33, shealth.getRatio(20, BmiCategory.NORMAL), 0.01);
+        assertEquals(100.0, shealth.getRatio(30, BmiCategory.OVERWEIGHT), 0.01);
+    }
+
+    @Test
+    void should_keepZeroHeight_when_noValidHeightInDecade() throws IOException {
+        Path csv = resourcePath("impute-no-valid-height.csv");
+        SHealth shealth = new SHealth();
+        shealth.calculateBmi(csv.toString());
+
+        assertEquals(100.0, shealth.getRatio(30, BmiCategory.OBESITY), 0.01);
+        assertEquals(0.0, shealth.getRatio(30, BmiCategory.NORMAL), 0.01);
+    }
+
+    @Test
     void should_returnNormalBmiUserIds_when_mixedCategoriesPresent() throws IOException {
         Path csv = resourcePath("normal-users.csv");
         SHealth shealth = new SHealth();
